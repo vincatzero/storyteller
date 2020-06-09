@@ -15,7 +15,7 @@ const MAX_MEDIA_SIZE = '50mb';
  * can be used with editors too.
  */
 class HttpServer {
-    constructor (projectManager) {
+    constructor(projectManager) {
         //store a reference to the project manager
         this.projectManager = projectManager;
 
@@ -24,9 +24,9 @@ class HttpServer {
 
         //add middleware
         //app.use(express.static(path.join(__dirname, '..', 'public')));
-        app.use(bodyParser.urlencoded({limit: MAX_MEDIA_SIZE, extended: true}/*{ extended: false }*/));
-        app.use(bodyParser.json({limit: MAX_MEDIA_SIZE}));
-        
+        app.use(bodyParser.urlencoded({ limit: MAX_MEDIA_SIZE, extended: true }/*{ extended: false }*/));
+        app.use(bodyParser.json({ limit: MAX_MEDIA_SIZE }));
+
         //set the routes
         this.createRoutes(app);
 
@@ -66,7 +66,7 @@ class HttpServer {
             this.projectManager.commentManager.updateComment(comment);
             res.sendStatus(200);
         });
-        
+
         app.put('/commentPosition', (req, res) => {
             //update the position of a comment
             const commentPositionData = req.body;
@@ -91,70 +91,70 @@ class HttpServer {
         });
 
         //if this server will handle http requests from editors
-        if(this.projectManager.useHttpServerForEditor) {
+        if (this.projectManager.useHttpServerForEditor) {
             app.get('/close-project', (req, res) => {
                 //stop storyteller
                 this.projectManager.stopStoryteller();
                 res.status(200).end();
             });
-            
+
             app.get('/active-devs', (req, res) => {
                 //get all the active devs
-                res.json({allActiveDevs: this.projectManager.developerManager.getActiveDevelopers()});
+                res.json({ allActiveDevs: this.projectManager.developerManager.getActiveDevelopers() });
             });
-            
+
             app.get('/inactive-devs', (req, res) => {
                 //get all the inactive devs
-                res.json({allInactiveDevs: this.projectManager.developerManager.getInactiveDevelopers()});
+                res.json({ allInactiveDevs: this.projectManager.developerManager.getInactiveDevelopers() });
             });
-            
+
             //developer related 
             app.post('/update-first-developer', (req, res) => {
-                const dev = req.body.devInfo; 
+                const dev = req.body.devInfo;
                 //replace the default dev with a new one
                 this.projectManager.developerManager.replaceAnonymousDeveloperWithNewDeveloper(dev.userName, dev.email);
                 res.status(200).end();
             });
-            
+
             app.post('/add-new-developer', (req, res) => {
                 const devInfo = req.body.devInfo;
                 //create a new dev and add them to the current dev group
                 this.projectManager.developerManager.createDeveloper(devInfo.userName, devInfo.email);
                 this.projectManager.developerManager.addDevelopersToActiveGroupByUserName([devInfo.userName]);
                 //get all the active devs
-                res.json({allActiveDevs: this.projectManager.developerManager.getActiveDevelopers()});
+                res.json({ allActiveDevs: this.projectManager.developerManager.getActiveDevelopers() });
             });
-            
+
             app.post('/add-dev-to-active-dev-group', (req, res) => {
                 //add all the developers to the active dev group
                 const devUserNames = req.body.devUserNames;
                 this.projectManager.developerManager.addDevelopersToActiveGroupByUserName(devUserNames);
                 //get all the active devs
-                res.json({allActiveDevs: this.projectManager.developerManager.getActiveDevelopers()});
+                res.json({ allActiveDevs: this.projectManager.developerManager.getActiveDevelopers() });
             });
-            
+
             app.post('/remove-dev-from-active-dev-group', (req, res) => {
                 //remove all the developers to the active dev group
                 const devUserNames = req.body.devUserNames;
                 this.projectManager.developerManager.removeDevelopersFromActiveGroupByUserName(devUserNames);
                 //get all the active devs
-                res.json({allActiveDevs: this.projectManager.developerManager.getActiveDevelopers()});
+                res.json({ allActiveDevs: this.projectManager.developerManager.getActiveDevelopers() });
             });
-            
+
             //file system /fs
             app.get('/save-all', (req, res) => {
                 //save the file state
                 this.projectManager.saveTextFileState();
                 res.status(200).end();
             });
-            
+
             app.post('/create-file', (req, res) => {
                 //create a new file 
                 const filePath = req.body.filePath;
                 this.projectManager.createFile(filePath);
                 res.status(200).end();
             });
-            
+
             app.post('/delete-file', (req, res) => {
                 //delete a file 
                 const filePath = req.body.filePath;
@@ -177,14 +177,14 @@ class HttpServer {
                 this.projectManager.moveFile(oldFilePath, newFilePath);
                 res.status(200).end();
             });
-            
+
             app.post('/create-directory', (req, res) => {
                 //create a dir
                 const dirPath = req.body.dirPath;
                 this.projectManager.createDirectory(dirPath);
                 res.status(200).end();
             });
-            
+
             app.post('/delete-directory', (req, res) => {
                 //delete a directory
                 const dirPath = req.body.dirPath;
@@ -207,14 +207,14 @@ class HttpServer {
                 this.projectManager.moveDirectory(oldDirPath, newDirPath);
                 res.status(200).end();
             });
-            
+
             app.post('/delete-file-or-directory', (req, res) => {
                 //delete a file or directory
                 const aPath = req.body.aPath;
                 this.projectManager.deleteFileOrDirectory(aPath);
                 res.status(200).end();
             });
-            
+
             //text related /text
             app.post('/insert-text', (req, res) => {
                 //insert some text
@@ -226,7 +226,7 @@ class HttpServer {
                 this.projectManager.handleInsertedText(filePath, insertedText, startRow, startCol, pastedInsertEventIds);
                 res.status(200).end();
             });
-            
+
             app.post('/delete-text', (req, res) => {
                 //delete some text
                 const filePath = req.body.filePath;
@@ -244,16 +244,56 @@ class HttpServer {
         });
     }
 
+    eventDecoder(codeEvents) {
+        console.log("Decoding");
+
+        let previousTimeStamp = codeEvents[0].timestamp;
+        let currentLineNumber = codeEvents[0].lineNumber;
+        let currentFileID = codeEvents[0].fileID;
+
+        //rebuildiing timestamps
+        for (let event in codeEvents) {
+            if (codeEvents[event] === codeEvents[0]) {
+                continue;
+            }
+
+            // previousTimeStamp += codeEvents[event].timestamp;
+            // codeEvents[event].timestamp = previousTimeStamp;
+
+            //rebuilding line numbers
+            if (!codeEvents[event].lineNumber) {
+                codeEvents[event].lineNumber = currentLineNumber;
+            }
+            else {
+                currentLineNumber = codeEvents[event].lineNumber;
+            }
+
+
+            //rebuilding fileIDs
+            if(!codeEvents[event].fileId)
+            {
+                codeEvents[event].fileId = currentFileID;
+            }
+            else{
+                currentFileID = codeEvents[event].fileId;
+            }
+        }
+    }
+
     /*
      * Creates a page to show a playback.
      */
     createPlayback(req, res) {
         //get all of the event data 
         const codeEvents = this.projectManager.eventManager.read();
-        
+
+        if (codeEvents[0].minimized){
+            this.eventDecoder(codeEvents);
+        }
+
         //strip the text events from the files
         const minimizedAllFiles = {};
-        for(const fileId in this.projectManager.fileSystemManager.allFiles) {
+        for (const fileId in this.projectManager.fileSystemManager.allFiles) {
             //add everything but the textFileInsertEvents
             minimizedAllFiles[fileId] = this.projectManager.fileSystemManager.allFiles[fileId].getMinimalFileData();
         }
@@ -261,13 +301,13 @@ class HttpServer {
         //add the data members required for a playback to an object
         let playbackData = {
             codeEvents: codeEvents,
-            allFiles: minimizedAllFiles, 
+            allFiles: minimizedAllFiles,
             allDirs: this.projectManager.fileSystemManager.allDirs,
             allDevelopers: this.projectManager.developerManager.allDevelopers,
             allDeveloperGroups: this.projectManager.developerManager.allDeveloperGroups,
             currentDeveloperGroupId: this.projectManager.developerManager.currentDeveloperGroupId,
             comments: this.projectManager.commentManager.comments,
-            title: this.projectManager.project.title, 
+            title: this.projectManager.project.title,
             description: this.projectManager.project.description,
             branchId: this.projectManager.branchId
         };
@@ -282,7 +322,7 @@ class HttpServer {
         let isComment = 'false';
 
         //if this is a playback for adding a comment 
-        if(req.query.comment && req.query.comment === 'true') {
+        if (req.query.comment && req.query.comment === 'true') {
 
             //indicate that there should be a jump to the end of the playback to add a comment    
             isComment = 'true';
@@ -316,7 +356,7 @@ class HttpServer {
             allDeveloperGroups: newPlaybackData.allDeveloperGroups,
             currentDevGroupId: newPlaybackData.currentDeveloperGroupId,
             comments: newPlaybackData.comments,
-            playbackDescription: {title: newPlaybackData.title, description: newPlaybackData.description},
+            playbackDescription: { title: newPlaybackData.title, description: newPlaybackData.description },
             branchId: newPlaybackData.branchId
         };
 
@@ -339,12 +379,12 @@ class HttpServer {
             };
 
             //if the event is not relevant to playback, mark the old one as such
-            if(newEvent.permanentRelevance === 'never relevant') {
+            if (newEvent.permanentRelevance === 'never relevant') {
                 oldEvent['permanentRelevance'] = 'never relevant';
             }
 
             //handle event types
-            if(newEvent.type === 'CREATE DIRECTORY') {
+            if (newEvent.type === 'CREATE DIRECTORY') {
                 //change the event type
                 oldEvent['type'] = 'Create Directory';
                 //same
@@ -352,7 +392,7 @@ class HttpServer {
                 oldEvent['parentDirectoryId'] = newEvent.parentDirectoryId;
                 //map properties from new to old
                 oldEvent['initialName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.directoryPath).base));
-            } else if(newEvent.type === 'DELETE DIRECTORY') {
+            } else if (newEvent.type === 'DELETE DIRECTORY') {
                 //change the event type
                 oldEvent['type'] = 'Delete Directory';
                 //same
@@ -360,7 +400,7 @@ class HttpServer {
                 oldEvent['parentDirectoryId'] = newEvent.parentDirectoryId;
                 //map properties from new to old
                 oldEvent['directoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.directoryPath).base));
-            } else if(newEvent.type === 'RENAME DIRECTORY') {
+            } else if (newEvent.type === 'RENAME DIRECTORY') {
                 //change the event type
                 oldEvent['type'] = 'Rename Directory';
                 //same
@@ -368,7 +408,7 @@ class HttpServer {
                 //map properties from new to old
                 oldEvent['newDirectoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.newDirectoryPath).base));
                 oldEvent['oldDirectoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.oldDirectoryPath).base));
-            } else if(newEvent.type === 'MOVE DIRECTORY') {
+            } else if (newEvent.type === 'MOVE DIRECTORY') {
                 //change the event type
                 oldEvent['type'] = 'Move Directory';
                 //same
@@ -379,7 +419,7 @@ class HttpServer {
                 oldEvent['directoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.newDirectoryPath).base));
                 oldEvent['newParentDirectoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.newDirectoryPath).base));
                 oldEvent['oldParentDirectoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.oldDirectoryPath).base));
-            } else if(newEvent.type === 'CREATE FILE') {
+            } else if (newEvent.type === 'CREATE FILE') {
                 //change the event type
                 oldEvent['type'] = 'Create File';
                 //same
@@ -387,7 +427,7 @@ class HttpServer {
                 oldEvent['parentDirectoryId'] = newEvent.parentDirectoryId;
                 //map properties from new to old
                 oldEvent['initialName'] = utilities.normalizeSeparators(path.parse(newEvent.filePath).base);
-            } else if(newEvent.type === 'DELETE FILE') {
+            } else if (newEvent.type === 'DELETE FILE') {
                 //change the event type
                 oldEvent['type'] = 'Delete File';
                 //same
@@ -395,7 +435,7 @@ class HttpServer {
                 oldEvent['parentDirectoryId'] = newEvent.parentDirectoryId;
                 //map properties from new to old
                 oldEvent['fileName'] = utilities.normalizeSeparators(path.parse(newEvent.filePath).base);
-            } else if(newEvent.type === 'RENAME FILE') {
+            } else if (newEvent.type === 'RENAME FILE') {
                 //change the event type
                 oldEvent['type'] = 'Rename File';
                 //same
@@ -403,7 +443,7 @@ class HttpServer {
                 //map properties from new to old
                 oldEvent['newFileName'] = utilities.normalizeSeparators(path.parse(newEvent.newFilePath).base);
                 oldEvent['oldFileName'] = utilities.normalizeSeparators(path.parse(newEvent.oldFilePath).base);
-            } else if(newEvent.type === 'MOVE FILE') {
+            } else if (newEvent.type === 'MOVE FILE') {
                 //change the event type
                 oldEvent['type'] = 'Move File';
                 //same
@@ -414,12 +454,12 @@ class HttpServer {
                 oldEvent['fileName'] = utilities.normalizeSeparators(path.parse(newEvent.newFilePath).base);
                 oldEvent['newParentDirectoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.newFilePath).dir));
                 oldEvent['oldParentDirectoryName'] = utilities.normalizeSeparators(utilities.addEndingPathSeparator(path.parse(newEvent.oldFilePath).dir));
-            } else if(newEvent.type === 'INSERT') {
+            } else if (newEvent.type === 'INSERT') {
                 //change the event type
                 oldEvent['type'] = 'Insert';
                 //same
                 oldEvent['character'] = utilities.unescapeSpecialCharacter(newEvent.character);
-                if(newEvent.previousNeighborId) {
+                if (newEvent.previousNeighborId) {
                     oldEvent['previousNeighborId'] = newEvent.previousNeighborId;
                 } else {
                     oldEvent['previousNeighborId'] = 'none';
@@ -428,7 +468,7 @@ class HttpServer {
                 oldEvent['column'] = newEvent.column;
                 oldEvent['fileId'] = newEvent.fileId;
                 oldEvent['pastedEventId'] = newEvent.pastedEventId;
-            } else if(newEvent.type === 'DELETE') {
+            } else if (newEvent.type === 'DELETE') {
                 //change the event type
                 oldEvent['type'] = 'Delete';
                 //same
@@ -438,7 +478,7 @@ class HttpServer {
                 oldEvent['lineNumber'] = newEvent.lineNumber;
                 oldEvent['column'] = newEvent.column;
                 oldEvent['fileId'] = newEvent.fileId;
-            } 
+            }
             return oldEvent;
         });
     }
@@ -448,7 +488,7 @@ class HttpServer {
      */
     convertFiles(newAllFiles) {
         const oldAllFiles = {};
-        for(const fileId in newAllFiles) {
+        for (const fileId in newAllFiles) {
             oldAllFiles[fileId] = {
                 id: newAllFiles[fileId].id,
                 parentId: newAllFiles[fileId].parentDirectoryId,
@@ -464,7 +504,7 @@ class HttpServer {
      */
     convertDirs(newAllDirs) {
         const oldAllFiles = {};
-        for(const dirId in newAllDirs) {
+        for (const dirId in newAllDirs) {
             oldAllFiles[dirId] = {
                 id: newAllDirs[dirId].id,
                 parentId: newAllDirs[dirId].parentDirectoryId,
@@ -480,7 +520,7 @@ class HttpServer {
      */
     convertDevelopers(newAllDevelopers) {
         const oldAllDevelopers = {};
-        for(const devId in newAllDevelopers) {
+        for (const devId in newAllDevelopers) {
             oldAllDevelopers[devId] = {
                 id: newAllDevelopers[devId].id,
                 firstName: newAllDevelopers[devId].userName,
@@ -522,14 +562,14 @@ class HttpServer {
 
         //the text in the file to replace
         const templateText = "function loadPlaybackData() {} //!!! string replacement of function here !!!";
-        
+
         //replace the dummy text with the new function
         //javascript's replace() function will replace some special characters, 
         //'$&' for example, in the simplest case with some text. Since many js 
         //libraries include '$' we will use another version of replace that 
         //doesn't (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace 
         //for more info).   
-        return playbackPage.replace(templateText, function() {return loadPlaybackDataFunction;});
+        return playbackPage.replace(templateText, function () { return loadPlaybackDataFunction; });
     }
 }
 

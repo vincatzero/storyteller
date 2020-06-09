@@ -1580,11 +1580,16 @@
              */
             document.addEventListener("DOMContentLoaded", function(event) {
 
+              
+
                 //construct the playback object. There is a bit of magic here, loadPlaybackData() is added 
                 //to this file dynamically by the playback web server and it includes all of the events,
                 //dev info, commments, etc.                
                 loadPlaybackData();
                 
+              
+                
+
                 //set up the UI event handlers
                 setUpUIEventHandlers();
 
@@ -1612,6 +1617,8 @@
 			 * local storage, or from a textbox)
 			 */            
             function loadPlaybackData() {} //!!! string replacement of function here !!!
+
+            
             
             function makeAnAlert(msg, alertType, idOfAlertArea) {
                 
