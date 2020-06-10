@@ -246,7 +246,7 @@ class HttpServer {
 
     eventDecoder(codeEvents) {
 
-        //let previousTimeStamp = codeEvents[0].timestamp;
+        let previousTimeStamp = codeEvents[0].timestamp;
         let currentLineNumber = codeEvents[0].lineNumber;
         let currentFileID = codeEvents[0].fileID;
         let currentEventType = codeEvents[0].type;
@@ -258,8 +258,8 @@ class HttpServer {
                 continue;
             }
 
-            // previousTimeStamp += codeEvents[event].timestamp;
-            // codeEvents[event].timestamp = previousTimeStamp;
+           codeEvents[event].timestamp += previousTimeStamp;
+           previousTimeStamp = codeEvents[event].timestamp;
 
             //rebuilding line numbers
             if (!codeEvents[event].lineNumber) {
@@ -271,28 +271,26 @@ class HttpServer {
 
 
             //rebuilding fileIDs
-            if(!codeEvents[event].fileId)
-            {
+            if (!codeEvents[event].fileId) {
                 codeEvents[event].fileId = currentFileID;
             }
-            else{
+            else {
                 currentFileID = codeEvents[event].fileId;
             }
 
             //rebuilding event types
-            if(!codeEvents[event].type){
+            if (!codeEvents[event].type) {
                 codeEvents[event].type = currentEventType;
             }
-            else{
+            else {
                 currentEventType = codeEvents[event].type;
             }
 
             //rebuilding createdByDevGroupId
-            if (!codeEvents[event].createdByDevGroupId)
-            {
+            if (!codeEvents[event].createdByDevGroupId) {
                 codeEvents[event].createdByDevGroupId = currentCreatedBy;
             }
-            else{
+            else {
                 currentCreatedBy = codeEvents[event].createdByDevGroupId;
             }
         }
@@ -305,7 +303,7 @@ class HttpServer {
         //get all of the event data 
         const codeEvents = this.projectManager.eventManager.read();
 
-        if (codeEvents[0].minimized){
+        if (codeEvents[0].minimized) {
             this.eventDecoder(codeEvents);
         }
 
