@@ -245,11 +245,12 @@ class HttpServer {
     }
 
     eventDecoder(codeEvents) {
-        console.log("Decoding");
 
-        let previousTimeStamp = codeEvents[0].timestamp;
+        //let previousTimeStamp = codeEvents[0].timestamp;
         let currentLineNumber = codeEvents[0].lineNumber;
         let currentFileID = codeEvents[0].fileID;
+        let currentEventType = codeEvents[0].type;
+        let currentCreatedBy = codeEvents[0].createdByDevGroupId;
 
         //rebuildiing timestamps
         for (let event in codeEvents) {
@@ -276,6 +277,23 @@ class HttpServer {
             }
             else{
                 currentFileID = codeEvents[event].fileId;
+            }
+
+            //rebuilding event types
+            if(!codeEvents[event].type){
+                codeEvents[event].type = currentEventType;
+            }
+            else{
+                currentEventType = codeEvents[event].type;
+            }
+
+            //rebuilding createdByDevGroupId
+            if (!codeEvents[event].createdByDevGroupId)
+            {
+                codeEvents[event].createdByDevGroupId = currentCreatedBy;
+            }
+            else{
+                currentCreatedBy = codeEvents[event].createdByDevGroupId;
             }
         }
     }

@@ -127,9 +127,11 @@ class EventManager extends FileBackedCollection {
     //goes through the event list and reduces the footprint of all events
     eventShrinker(eventList) {
 
-        let previousTimeStamp = eventList[0].timestamp;
+        //let previousTimeStamp = eventList[0].timestamp;
         let currentLineNumber = eventList[0].lineNumber;
         let currentFileID = eventList[0].fileId;
+        let currentEventType = eventList[0].type;
+        let currentCreatedBy = eventList[0].createdByDevGroupId;
 
         for (let event in eventList)
         {
@@ -155,7 +157,7 @@ class EventManager extends FileBackedCollection {
                 currentLineNumber = eventList[event].lineNumber;
             }
 
-            //deleting fileID if its matches the previous events fileID
+            //deleting fileID if it matches the previous events fileID
             if (eventList[event].fileId == currentFileID)
             {
                 delete eventList[event].fileId;
@@ -163,6 +165,26 @@ class EventManager extends FileBackedCollection {
             else{
                 currentFileID = eventList[event].fileId;
             }
+
+            //deleting event type if it matches the previous type
+            if (eventList[event].type == currentEventType){
+                delete eventList[event].type;
+            }
+            else
+            {
+                currentEventType = eventList[event].type;
+            }
+
+            //deleting createdByDevGroupId if it matches the previous createdByDevGroupId
+            if (eventList[event].createdByDevGroupId == currentCreatedBy)
+            {
+                delete eventList[event].createdByDevGroupId;
+            }
+            else{
+                currentCreatedBy = eventList[event].createdByDevGroupId;
+            }
+
+
 
 
         }
