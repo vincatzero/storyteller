@@ -247,52 +247,103 @@ class HttpServer {
     eventDecoder(codeEvents) {
 
         let previousTimeStamp = codeEvents[0].timestamp;
-        let currentLineNumber = codeEvents[0].lineNumber;
-        let currentFileID = codeEvents[0].fileID;
-        let currentEventType = codeEvents[0].type;
-        let currentCreatedBy = codeEvents[0].createdByDevGroupId;
+        let currentLineNumber = codeEvents[0].ln ? codeEvents[0].ln : null;
+        let currentFileID = codeEvents[0].fId ? codeEvents[0].fId : null;
+        let currentEventType = codeEvents[0].t;
+        let currentCreatedBy = codeEvents[0].dg;
+        let currentBranchID = codeEvents[0].b;
+        let currentChar = codeEvents[0].c ? codeEvents[0].c : null;
+        let currentPrevNeighbor = codeEvents[0].pn ? codeEvents[0].pn : null;
 
         //rebuildiing timestamps
-        for (let event in codeEvents) {
-            if (codeEvents[event] === codeEvents[0]) {
+        for (let index = 1; index < codeEvents.length; index++) {
+
+
+            //only shrinking types INSERT and DELETE
+            if (codeEvents[index].type) {//|| codeEvents[index].t != "INSERT" && codeEvents[index].t != "DELETE") {
                 continue;
             }
 
-           codeEvents[event].timestamp += previousTimeStamp;
-           previousTimeStamp = codeEvents[event].timestamp;
+            const fullObject = {
+                id: codeEvents[index].i,
+                eventSequenceNumber: codeEvents[index].esn,
+                column: codeEvents[index].cl,
+                //timestamp: ts
+                //createdByDevGroupId: dg
+                //currentBranchID: b
+                //type: t
+            };
 
-            //rebuilding line numbers
-            if (!codeEvents[event].lineNumber) {
-                codeEvents[event].lineNumber = currentLineNumber;
+            //rebuilding event types
+            if (!codeEvents[index].t) {
+                fullObject.type = currentEventType;
             }
             else {
-                currentLineNumber = codeEvents[event].lineNumber;
+                currentEventType = codeEvents[index].t;
+                fullObject.type = currentEventType;
             }
+
+            //rebuilding timestamp
+            fullObject.timestamp = codeEvents[index].ts ? parseInt(codeEvents[index].ts,16) : 0;
+            fullObject.timestamp += previousTimeStamp;
+            previousTimeStamp = fullObject.timestamp;
+
+            //rebuilding line numbers
+            if (codeEvents[index].ln) {
+                currentLineNumber = codeEvents[index].ln;
+            }
+            fullObject.lineNumber = currentLineNumber;
+            //TODO: MAKE ALL LIKE THIS
 
 
             //rebuilding fileIDs
-            if (!codeEvents[event].fileId) {
-                codeEvents[event].fileId = currentFileID;
+            if (!codeEvents[index].fId) {
+                fullObject.fileId = currentFileID;
             }
             else {
-                currentFileID = codeEvents[event].fileId;
+                currentFileID = codeEvents[index].fId;
+                fullObject.fileId = currentFileID;
             }
 
-            //rebuilding event types
-            if (!codeEvents[event].type) {
-                codeEvents[event].type = currentEventType;
-            }
-            else {
-                currentEventType = codeEvents[event].type;
-            }
 
             //rebuilding createdByDevGroupId
-            if (!codeEvents[event].createdByDevGroupId) {
-                codeEvents[event].createdByDevGroupId = currentCreatedBy;
+            if (!codeEvents[index].dg) {
+                fullObject.createdByDevGroupId = currentCreatedBy;
             }
             else {
-                currentCreatedBy = codeEvents[event].createdByDevGroupId;
+                currentCreatedBy = codeEvents[index].dg;
+                fullObject.createdByDevGroupId = currentCreatedBy;
             }
+
+            if (codeEvents[index].b && codeEvents[index].b == currentBranchID) {
+                fullObject.branchId = currentBranchID;
+            }
+            else if (codeEvents[index].b) {
+                currentBranchID = codeEvents[index].b;
+                fullObject.branchId = currentBranchID;
+            }
+
+            if (codeEvents[index].c) {
+                currentChar = codeEvents[index].c;
+            }
+            fullObject.character = currentChar;
+
+            if (codeEvents[index].pn) {
+                currentPrevNeighbor = codeEvents[index].pn;
+            }
+            fullObject.previousNeighborId = currentPrevNeighbor;
+
+            if (codeEvents[index].t == "INSERT") {
+                fullObject.pastedEventId = codeEvents[index].pe;
+            }
+
+            if (codeEvents[index].pr) {
+                fullObject.permanentRelevance = codeEvents[index].pr;
+            }
+
+            codeEvents[index] = fullObject;
+
+
         }
     }
 
@@ -303,7 +354,7 @@ class HttpServer {
         //get all of the event data 
         const codeEvents = this.projectManager.eventManager.read();
 
-        if (codeEvents[0].minimized) {
+        if (!this.projectManager.eventManager.isDebugMode) {
             this.eventDecoder(codeEvents);
         }
 

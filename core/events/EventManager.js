@@ -7,7 +7,7 @@ const FileBackedCollection = require('../FileBackedCollection.js');
 //holds the number of events to store in memory before writing the events to
 //an intermediate file of events 
 const MAX_BUFFER_SIZE = 10;
-const isDebugMode = false;
+
 
 class EventManager extends FileBackedCollection {
     constructor(storytellerDirPath) {
@@ -17,6 +17,9 @@ class EventManager extends FileBackedCollection {
         //create a path to a file in a new sub-directory to hold events that 
         //have been moved from memory but are not yet stored in the json file
         this.fullPathToIntermediateEventsFile = path.join(this.fullPathToParentDir, 'intermediate', 'events.txt');
+
+        //determine if events will be full sized or minimized
+        this.isDebugMode = false;
 
         //create a collection to hold the latest events in memory
         this.latestEvents = [];
@@ -110,7 +113,7 @@ class EventManager extends FileBackedCollection {
         //clear out the latest events in memory since they have been added to the list
         this.latestEvents = [];
 
-        if (!isDebugMode) {
+        if (!this.isDebugMode) {
             this.eventShrinker(events);
         }
 
@@ -126,58 +129,113 @@ class EventManager extends FileBackedCollection {
     //goes through the event list and reduces the footprint of all events
     eventShrinker(eventList) {
 
+        //grab initial values for event properties or null if event doesn't have property
         let previousTimeStamp = eventList[0].timestamp;
-        let currentLineNumber = eventList[0].lineNumber;
-        let currentFileID = eventList[0].fileId;
+        let currentLineNumber = eventList[0].lineNumber ? eventList[0].lineNumber : null;
+        let currentFileID = eventList[0].fileId ? eventList[0].fileId : null;
         let currentEventType = eventList[0].type;
         let currentCreatedBy = eventList[0].createdByDevGroupId;
+        let currentBranchID = eventList[0].currentBranchID ? eventList[0].currentBranchID : null;
+        let currentChar = eventList[0].character ? eventList[0].character : null;
+        let currentPreviousNeighborID = eventList[0].previousNeighborId ? eventList[0].previousNeighborId : null;
 
-        for (let event in eventList) {
-            
-            
-            if (eventList[event] === eventList[0]) {
-                eventList[event].minimized = true;
+        for (let index = 1; index < eventList.length; index++) {
+
+            //only shrinking types INSERT and DELETE
+            if (eventList[index].type != "INSERT" && eventList[index].type != "DELETE") {
                 continue;
             }
 
+            const minObject = {
+                i: eventList[index].id, //id
+                esn: eventList[index].eventSequenceNumber, //event sequence number               
+                cl: eventList[index].column
+                // ts, //timestamp
+                // dg, //createdByDevGroupId
+                // b, //branch id
+                // t, //type
+            };
+
             //shrinking timestamps
-            let currentOffset = eventList[event].timestamp - previousTimeStamp;
+            let currentOffset = eventList[index].timestamp - previousTimeStamp;
             previousTimeStamp += currentOffset;
-            eventList[event].timestamp = currentOffset;       
+            //eventList[index].timestamp = currentOffset;  
+            if (currentOffset != 0) {
+                minObject.ts = currentOffset.toString(16);
+            }
 
 
             //determine if the line number of an event is the same as the previous
             //if so, deletes line number from event
-            if (eventList[event].lineNumber == currentLineNumber) {
-                delete eventList[event].lineNumber;
+            if (eventList[index].lineNumber == currentLineNumber) {//&& currentLineNumber != null) {
+                //delete eventList[index].lineNumber;
             }
             else {
-                currentLineNumber = eventList[event].lineNumber;
+                currentLineNumber = eventList[index].lineNumber;
+                minObject.ln = currentLineNumber;
             }
 
             //deleting fileID if it matches the previous events fileID
-            if (eventList[event].fileId == currentFileID) {
-                delete eventList[event].fileId;
+            if (eventList[index].fileId == currentFileID) {// && currentFileID != null) {
+                //delete eventList[index].fileId;
             }
             else {
-                currentFileID = eventList[event].fileId;
+                currentFileID = eventList[index].fileId;
+                minObject.fId = currentFileID;
             }
 
             //deleting event type if it matches the previous type
-            if (eventList[event].type == currentEventType) {
-                delete eventList[event].type;
+            if (eventList[index].type == currentEventType) {
+                //delete eventList[index].type;
             }
             else {
-                currentEventType = eventList[event].type;
+                currentEventType = eventList[index].type;
+                minObject.t = currentEventType;
             }
 
             //deleting createdByDevGroupId if it matches the previous createdByDevGroupId
-            if (eventList[event].createdByDevGroupId == currentCreatedBy) {
-                delete eventList[event].createdByDevGroupId;
+            if (eventList[index].createdByDevGroupId == currentCreatedBy) {
+                //delete eventList[index].createdByDevGroupId;
             }
             else {
-                currentCreatedBy = eventList[event].createdByDevGroupId;
+                currentCreatedBy = eventList[index].createdByDevGroupId;
+                minObject.dg = currentCreatedBy;
             }
+
+            if (eventList[index].branchId == currentBranchID) {
+                //empty
+            }
+            else if (eventList[index].branchId){
+                currentBranchID = eventList[index].branchId;
+                minObject.b = currentBranchID;
+            }
+
+            if (eventList[index].character == currentChar) {// && currentChar != null){
+                //empty
+            }
+            else {
+                currentChar = eventList[index].character;
+                minObject.c = currentChar;
+            }
+
+            if (eventList[index].previousNeighborId == currentPreviousNeighborID) {
+                //empty
+            }
+            else {
+                currentPreviousNeighborID = eventList[index].previousNeighborId;
+                minObject.pn = currentPreviousNeighborID;
+            }
+
+            if (eventList[index].type == "INSERT") {
+                minObject.pe = eventList[index].pastedEventId;
+            }
+
+            if (eventList[index].permanentRelevance) {
+                minObject.pr = eventList[index].permanentRelevance //permenant relevance
+            }
+
+            eventList[index] = minObject;
+
         }
     }
 
