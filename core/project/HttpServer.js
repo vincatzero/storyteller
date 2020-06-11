@@ -284,7 +284,7 @@ class HttpServer {
             }
 
             //rebuilding timestamp
-            fullObject.timestamp = codeEvents[index].ts ? parseInt(codeEvents[index].ts,16) : 0;
+            fullObject.timestamp = codeEvents[index].ts ? parseInt(codeEvents[index].ts, 16) : 0;
             fullObject.timestamp += previousTimeStamp;
             previousTimeStamp = fullObject.timestamp;
 
@@ -342,7 +342,6 @@ class HttpServer {
             }
 
             codeEvents[index] = fullObject;
-
 
         }
     }

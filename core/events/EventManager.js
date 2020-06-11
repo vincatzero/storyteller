@@ -146,82 +146,71 @@ class EventManager extends FileBackedCollection {
                 continue;
             }
 
+            //create a new object which will hold minimized names
             const minObject = {
                 i: eventList[index].id, //id
                 esn: eventList[index].eventSequenceNumber, //event sequence number               
                 cl: eventList[index].column
-                // ts, //timestamp
-                // dg, //createdByDevGroupId
-                // b, //branch id
-                // t, //type
+                // ts: timestamp
+                // dg: createdByDevGroupId
+                // b: branch id
+                // t: type
             };
 
             //shrinking timestamps
             let currentOffset = eventList[index].timestamp - previousTimeStamp;
             previousTimeStamp += currentOffset;
-            //eventList[index].timestamp = currentOffset;  
             if (currentOffset != 0) {
-                minObject.ts = currentOffset.toString(16);
+                //convert the offset to a hex string
+                minObject.ts = currentOffset.toString(16); 
             }
-
 
             //determine if the line number of an event is the same as the previous
-            //if so, deletes line number from event
-            if (eventList[index].lineNumber == currentLineNumber) {//&& currentLineNumber != null) {
-                //delete eventList[index].lineNumber;
-            }
-            else {
+            //if not, update currentLineNumber and add line number to minObject
+            if (eventList[index].lineNumber != currentLineNumber) {
                 currentLineNumber = eventList[index].lineNumber;
                 minObject.ln = currentLineNumber;
             }
 
-            //deleting fileID if it matches the previous events fileID
-            if (eventList[index].fileId == currentFileID) {// && currentFileID != null) {
-                //delete eventList[index].fileId;
-            }
-            else {
+            //determine if the fileId is the same as the previous
+            //if not, update currentFileID and add fileId to minObject
+            if (eventList[index].fileId != currentFileID) {
                 currentFileID = eventList[index].fileId;
                 minObject.fId = currentFileID;
             }
 
-            //deleting event type if it matches the previous type
-            if (eventList[index].type == currentEventType) {
-                //delete eventList[index].type;
-            }
-            else {
+
+            //determine if the current type is the same as the previous
+            //if not, update currentEventType and add type to minObject
+            if (eventList[index].type != currentEventType) {
                 currentEventType = eventList[index].type;
                 minObject.t = currentEventType;
             }
 
-            //deleting createdByDevGroupId if it matches the previous createdByDevGroupId
-            if (eventList[index].createdByDevGroupId == currentCreatedBy) {
-                //delete eventList[index].createdByDevGroupId;
-            }
-            else {
+            //determine if current createdByDevGroupId is the same as the previous
+            //if not, update currentCreatedBy and add createdByDevGroupId to minObject
+            if (eventList[index].createdByDevGroupId != currentCreatedBy) {
                 currentCreatedBy = eventList[index].createdByDevGroupId;
                 minObject.dg = currentCreatedBy;
             }
 
-            if (eventList[index].branchId == currentBranchID) {
-                //empty
-            }
-            else if (eventList[index].branchId){
+            //determine if the current branchId is the same as the previous
+            //if not, update currentBranchID and add branchId to minObject
+            if (eventList[index].branchId != currentBranchID) {
                 currentBranchID = eventList[index].branchId;
                 minObject.b = currentBranchID;
             }
 
-            if (eventList[index].character == currentChar) {// && currentChar != null){
-                //empty
-            }
-            else {
+            //determine if the current character is the same as the previous
+            //if not, update currentChar and add character to minObject
+            if (eventList[index].character != currentChar) {
                 currentChar = eventList[index].character;
                 minObject.c = currentChar;
             }
 
-            if (eventList[index].previousNeighborId == currentPreviousNeighborID) {
-                //empty
-            }
-            else {
+            //deterine if the current previousNeighborId is the same as the previous
+            //if not, update currentPreviousNeighborID and addpreviousNeighborId to minObject
+            if (eventList[index].previousNeighborId != currentPreviousNeighborID) {
                 currentPreviousNeighborID = eventList[index].previousNeighborId;
                 minObject.pn = currentPreviousNeighborID;
             }
@@ -231,14 +220,13 @@ class EventManager extends FileBackedCollection {
             }
 
             if (eventList[index].permanentRelevance) {
-                minObject.pr = eventList[index].permanentRelevance //permenant relevance
+                minObject.pr = eventList[index].permanentRelevance 
             }
 
+            //replace the full event with minObjecct
             eventList[index] = minObject;
-
         }
     }
-
 
 
     /*
