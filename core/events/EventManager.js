@@ -131,15 +131,16 @@ class EventManager extends FileBackedCollection {
 
         //grab initial values for event properties or null if event doesn't have property
         let previousTimeStamp = eventList[0].timestamp;
-        let currentLineNumber = eventList[0].lineNumber ? eventList[0].lineNumber : null;
-        let currentFileID = eventList[0].fileId ? eventList[0].fileId : null;
         let currentEventType = eventList[0].type;
         let currentCreatedBy = eventList[0].createdByDevGroupId;
         let currentBranchID = eventList[0].currentBranchID ? eventList[0].currentBranchID : null;
-        let currentChar = eventList[0].character ? eventList[0].character : null;
-        let currentPreviousNeighborID = eventList[0].previousNeighborId ? eventList[0].previousNeighborId : null;
+        let currentLineNumber = null;
+        let currentFileID = null;  
+        let currentChar = null;
+        let currentPreviousNeighborID = null;
+        let currentColumn = null;
 
-        for (let index = 1; index < eventList.length; index++) {
+        for (let index = 0; index < eventList.length; index++) {
 
             //only shrinking types INSERT and DELETE
             if (eventList[index].type != "INSERT" && eventList[index].type != "DELETE") {
@@ -150,7 +151,7 @@ class EventManager extends FileBackedCollection {
             const minObject = {
                 i: eventList[index].id, //id
                 esn: eventList[index].eventSequenceNumber, //event sequence number               
-                cl: eventList[index].column
+                //cl: column
                 // ts: timestamp
                 // dg: createdByDevGroupId
                 // b: branch id
@@ -161,8 +162,16 @@ class EventManager extends FileBackedCollection {
             let currentOffset = eventList[index].timestamp - previousTimeStamp;
             previousTimeStamp += currentOffset;
             if (currentOffset != 0) {
-                //convert the offset to a hex string
+                //convert the offset to a hex string to further reduce size
                 minObject.ts = currentOffset.toString(16); 
+            }
+
+           //determine if the column of an event is the same as the previous
+           //if not, update currentColumn and add column to minObject
+            if (eventList[index].column != currentColumn)
+            {
+                currentColumn = eventList[index].column;
+                minObject.cl = currentColumn;
             }
 
             //determine if the line number of an event is the same as the previous
@@ -215,9 +224,9 @@ class EventManager extends FileBackedCollection {
                 minObject.pn = currentPreviousNeighborID;
             }
 
-            if (eventList[index].type == "INSERT") {
+            if (eventList[index].pastedEventId != null) {
                 minObject.pe = eventList[index].pastedEventId;
-            }
+            }          
 
             if (eventList[index].permanentRelevance) {
                 minObject.pr = eventList[index].permanentRelevance 

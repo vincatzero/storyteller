@@ -246,6 +246,7 @@ class HttpServer {
 
     eventDecoder(codeEvents) {
 
+        //TODO: remove ternary operators to match eventmanager
         let previousTimeStamp = codeEvents[0].timestamp;
         let currentLineNumber = codeEvents[0].ln ? codeEvents[0].ln : null;
         let currentFileID = codeEvents[0].fId ? codeEvents[0].fId : null;
@@ -254,20 +255,22 @@ class HttpServer {
         let currentBranchID = codeEvents[0].b;
         let currentChar = codeEvents[0].c ? codeEvents[0].c : null;
         let currentPrevNeighbor = codeEvents[0].pn ? codeEvents[0].pn : null;
+        let currentColumn = null;
 
         //rebuildiing timestamps
-        for (let index = 1; index < codeEvents.length; index++) {
+        for (let index = 0; index < codeEvents.length; index++) {
 
 
-            //only shrinking types INSERT and DELETE
-            if (codeEvents[index].type) {//|| codeEvents[index].t != "INSERT" && codeEvents[index].t != "DELETE") {
+            //a check to make sure that only events that have been minimized are restored
+            //if an event has been minimizdd, it wont have the full "type" member. It would be "t" instead
+            if (codeEvents[index].type) {
                 continue;
             }
 
             const fullObject = {
                 id: codeEvents[index].i,
                 eventSequenceNumber: codeEvents[index].esn,
-                column: codeEvents[index].cl,
+                //column: cl
                 //timestamp: ts
                 //createdByDevGroupId: dg
                 //currentBranchID: b
@@ -275,45 +278,40 @@ class HttpServer {
             };
 
             //rebuilding event types
-            if (!codeEvents[index].t) {
-                fullObject.type = currentEventType;
-            }
-            else {
+            if (codeEvents[index].t) {
                 currentEventType = codeEvents[index].t;
-                fullObject.type = currentEventType;
             }
+            fullObject.type = currentEventType;
+
 
             //rebuilding timestamp
             fullObject.timestamp = codeEvents[index].ts ? parseInt(codeEvents[index].ts, 16) : 0;
             fullObject.timestamp += previousTimeStamp;
             previousTimeStamp = fullObject.timestamp;
 
+            //rebuilding columns
+            if (codeEvents[index].cl){
+                currentColumn = codeEvents[index].cl;
+            }
+            fullObject.column = currentColumn;
+
             //rebuilding line numbers
             if (codeEvents[index].ln) {
                 currentLineNumber = codeEvents[index].ln;
             }
             fullObject.lineNumber = currentLineNumber;
-            //TODO: MAKE ALL LIKE THIS
-
 
             //rebuilding fileIDs
-            if (!codeEvents[index].fId) {
-                fullObject.fileId = currentFileID;
-            }
-            else {
+            if (codeEvents[index].fId) {
                 currentFileID = codeEvents[index].fId;
-                fullObject.fileId = currentFileID;
             }
-
+            fullObject.fileId = currentFileID;
 
             //rebuilding createdByDevGroupId
-            if (!codeEvents[index].dg) {
-                fullObject.createdByDevGroupId = currentCreatedBy;
-            }
-            else {
+            if (codeEvents[index].dg) {
                 currentCreatedBy = codeEvents[index].dg;
-                fullObject.createdByDevGroupId = currentCreatedBy;
             }
+            fullObject.createdByDevGroupId = currentCreatedBy;
 
             if (codeEvents[index].b && codeEvents[index].b == currentBranchID) {
                 fullObject.branchId = currentBranchID;
@@ -342,7 +340,6 @@ class HttpServer {
             }
 
             codeEvents[index] = fullObject;
-
         }
     }
 
