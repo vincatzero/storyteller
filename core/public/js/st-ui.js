@@ -381,11 +381,15 @@ function createMediaControllerCommentVideoUI(srcPath, makeSelected, returnWithEv
     newVideo.onplay = function(){
         pauseMedia();
         newVideo.classList.add("playing");
-    };
+    }
  
-    $(newVideo).on('pause ended', function(){
+    newVideo.onpause = function(){
         newVideo.classList.remove("playing");
-    });
+    }
+ 
+    newVideo.onended = function(){
+        newVideo.classList.remove("playing");
+    }
 
     if (returnWithEventistener){
         newVideo.classList.add('mediaVideo');
@@ -443,42 +447,18 @@ function createMediaControllerCommentAudioUI(srcPath, makeSelected, returnWithEv
     newAudio.setAttribute('controls', '');
     newAudio.setAttribute('preload', 'metadata');
 
-    //pause any media that is playing
     newAudio.onplay = function(){
         pauseMedia();
         newAudio.classList.add("playing");
     }
 
-    //removes the playing class from a media file
-    $(newAudio).on('pause ended', function(){
+    newAudio.onpause = function(){
         newAudio.classList.remove("playing");
-    })    
+    }
 
-    const buttonGroup = document.createElement("div");
-    buttonGroup.classList.add("btn-group-vertical", "speedGroup");
-
-    const speedUpButton = document.createElement("button");
-    speedUpButton.classList.add("btn", "btn-sm",'speedButton', 'rounded-pill');
-    speedUpButton.appendChild(document.createTextNode('1.5x'));
-
-    speedUpButton.addEventListener('click', event => {
-        newAudio.playbackRate = 1.5;
-    });
-
-    const defaultSpeedButton = document.createElement("button");
-    defaultSpeedButton.classList.add("btn",  "btn-sm", 'speedButton', 'rounded-pill');
-    defaultSpeedButton.appendChild(document.createTextNode('1.0x'));
-
-    defaultSpeedButton.addEventListener('click', event => {
-       newAudio.playbackRate = 1;
-    });
-
-    buttonGroup.append(defaultSpeedButton);
-    buttonGroup.append(speedUpButton);
-
-    const outerSpeedDiv = document.createElement("div");
-    outerSpeedDiv.append(newAudio);
-    outerSpeedDiv.append(buttonGroup);
+    newAudio.onended = function(){
+        newAudio.classList.remove("playing");
+    }
 
     if (returnWithEventistener){
         newAudio.classList.add('mediaAudio');
@@ -486,11 +466,11 @@ function createMediaControllerCommentAudioUI(srcPath, makeSelected, returnWithEv
     else{
         newAudio.classList.add('mediaResizable');
     }
-
     newAudio.style.height = 40 + 'px';
 
+
     //add all the pieces together
-    cardBody.append(outerSpeedDiv);
+    cardBody.append(newAudio);
     cardFooter.append(fileName);
     cardDiv.append(cardBody);
     cardDiv.append(cardFooter);
@@ -1722,4 +1702,3 @@ function updateAllCommentHeaderCounts(){
         drag[i].getElementsByClassName("card-header")[0].firstChild.data = i + 1 + "/" + drag.length;
     }    
 }
-
